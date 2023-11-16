@@ -81,11 +81,16 @@ private:
   volatile uint8_t *csPort, *cdPort, *wrPort, *rdPort;
   uint8_t csPinSet, cdPinSet, wrPinSet, rdPinSet, csPinUnset, cdPinUnset,
       wrPinUnset, rdPinUnset, _reset;
-#endif
-#if defined(__SAM3X8E__)
+#elif defined(__SAM3X8E__)
   Pio *csPort, *cdPort, *wrPort, *rdPort;
   uint32_t csPinSet, cdPinSet, wrPinSet, rdPinSet, csPinUnset, cdPinUnset,
       wrPinUnset, rdPinUnset, _reset;
+#elif defined(ARDUINO_UNOR4_MINIMA)
+  volatile uint16_t *csPort, *cdPort, *wrPort, *rdPort;
+  uint16_t csPinSet, cdPinSet, wrPinSet, rdPinSet, csPinUnset, cdPinUnset,
+      wrPinUnset, rdPinUnset, _reset;
+#else
+#error "Board type unsupported / not recognized"
 #endif
 
 #endif

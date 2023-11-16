@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -eu -o pipefail
+
+LIBNAME=Adafruit_TFTLCD_Library
+
+TEMPDIR=$(mktemp -d)
+mkdir ${TEMPDIR}/RigExpertZeroII_I2C
+cp -r examples keywords.txt *.cpp *.h ${TEMPDIR}/${LIBNAME}/
+pushd ${TEMPDIR}
+zip ${LIBNAME}.zip ${LIBNAME}/*
+popd
+mv ${TEMPDIR}/${LIBNAME}.zip ./
+rm -r ${TEMPDIR}

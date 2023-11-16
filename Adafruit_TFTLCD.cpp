@@ -16,13 +16,15 @@
 #include "Adafruit_TFTLCD.h"
 #include "pin_magic.h"
 #include "pins_arduino.h"
+#if !defined(ARDUINO_UNOR4_MINIMA)
 #include "wiring_private.h"
+#endif
 
-//#define TFTWIDTH   320
-//#define TFTHEIGHT  480
+#define TFTWIDTH   320
+#define TFTHEIGHT  480
 
-#define TFTWIDTH 240
-#define TFTHEIGHT 320
+//#define TFTWIDTH 240
+//#define TFTHEIGHT 320
 
 // LCD controller chip identifiers
 #define ID_932X 0
@@ -42,17 +44,18 @@ Adafruit_TFTLCD::Adafruit_TFTLCD(uint8_t cs, uint8_t cd, uint8_t wr, uint8_t rd,
 #ifndef USE_ADAFRUIT_SHIELD_PINOUT
   // Convert pin numbers to registers and bitmasks
   _reset = reset;
-#ifdef __AVR__
+#if defined(__AVR__) || defined(ARDUINO_UNOR4_MINIMA)
   csPort = portOutputRegister(digitalPinToPort(cs));
   cdPort = portOutputRegister(digitalPinToPort(cd));
   wrPort = portOutputRegister(digitalPinToPort(wr));
   rdPort = portOutputRegister(digitalPinToPort(rd));
-#endif
-#if defined(__SAM3X8E__)
+#elif defined(__SAM3X8E__)
   csPort = digitalPinToPort(cs);
   cdPort = digitalPinToPort(cd);
   wrPort = digitalPinToPort(wr);
   rdPort = digitalPinToPort(rd);
+#else
+#error "Board type unsupported / not recognized"
 #endif
   csPinSet = digitalPinToBitMask(cs);
   cdPinSet = digitalPinToBitMask(cd);
@@ -62,17 +65,18 @@ Adafruit_TFTLCD::Adafruit_TFTLCD(uint8_t cs, uint8_t cd, uint8_t wr, uint8_t rd,
   cdPinUnset = ~cdPinSet;
   wrPinUnset = ~wrPinSet;
   rdPinUnset = ~rdPinSet;
-#ifdef __AVR__
+#if defined(__AVR__) || defined(ARDUINO_UNOR4_MINIMA)
   *csPort |= csPinSet; // Set all control bits to HIGH (idle)
   *cdPort |= cdPinSet; // Signals are ACTIVE LOW
   *wrPort |= wrPinSet;
   *rdPort |= rdPinSet;
-#endif
-#if defined(__SAM3X8E__)
+#elif defined(__SAM3X8E__)
   csPort->PIO_SODR |= csPinSet; // Set all control bits to HIGH (idle)
   cdPort->PIO_SODR |= cdPinSet; // Signals are ACTIVE LOW
   wrPort->PIO_SODR |= wrPinSet;
   rdPort->PIO_SODR |= rdPinSet;
+#else
+#error "Board type unsupported / not recognized"
 #endif
   pinMode(cs, OUTPUT); // Enable outputs
   pinMode(cd, OUTPUT);

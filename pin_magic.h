@@ -64,6 +64,51 @@
                "nop"                                                           \
                "\n" ::);
 
+// Minima runs at 48 MHz, one machine cycle is 20.3 nS
+// so we need 20 cycles which will be 416.67 nS
+#define DELAY20                                                                \
+  asm volatile("nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n" ::);
+
+
 #if defined(__AVR_ATmega168__) || defined(__AVR_ATmega328P__) ||               \
     defined(__AVR_ATmega328__) || defined(__AVR_ATmega8__)
 
@@ -462,13 +507,81 @@
 
 #endif
 
+#elif defined(ARDUINO_UNOR4_MINIMA)
+
+#ifdef USE_ADAFRUIT_SHIELD_PINOUT
+#error "Shield is not supported with Uno R4 Minima"
+#else
+
+// use the same pins as recommended for Uno variants even though it's awkward
+
+// d[0,1] -> pins 8,9 -> Port 3 Pin 4, Port 3 Pin 3
+// d[2-7] -> pins 2-7 -> Port 1 Pins 5-2, Port 1 Pins 6,7
+#define P3_MASK 0b0000000000011000
+#define P1_MASK 0b0000000011111100
+
+// write the byte d to the correct register bits
+#define write8inline(d)                                                        \
+  {                                                                            \
+    R_PORT3->PODR = (R_PORT3->PODR & ~P3_MASK) | ((d&B00000001) << 4) |        \
+                    ((d&B00000010) << 2);                                      \
+    R_PORT1->PODR = (R_PORT1->PODR & ~P1_MASK) | ((d&B00000100) << 3) |        \
+                    ((d&B00001000) << 1) | ((d&B00010000) >> 1) |              \
+                    ((d&B00100000) >> 3) | (d&B11000000);                    \
+    WR_STROBE;                                                                 \
+  }
+
+// read data registers and place into byte result
+#define read8inline(result)                                                    \
+  {                                                                            \
+    RD_ACTIVE;                                                                 \
+    DELAY20;                                                                   \
+    result = ((R_PORT3->PIDR & B00010000) >> 4) |                              \
+             ((R_PORT3->PIDR & B00001000) >> 2) |                              \
+             ((R_PORT1->PIDR & B00100000) >> 3) |                              \
+             ((R_PORT1->PIDR & B00010000) >> 1) |                              \
+             ((R_PORT1->PIDR & B00001000) << 1) |                              \
+             ((R_PORT1->PIDR & B00000100) << 3) |                              \
+             (R_PORT1->PIDR & B11000000) ;                                     \
+    RD_IDLE;                                                                   \
+  }
+
+// setup data registers for writing
+#define setWriteDirInline()                                                    \
+  {                                                                            \
+    R_PORT3->PDR |= P3_MASK;                                                   \
+    R_PORT1->PDR |= P1_MASK;                                                   \
+  }
+
+// setup data registers for reading
+#define setReadDirInline()                                                     \
+  {                                                                            \
+    R_PORT3->PDR &= ~P3_MASK;                                                  \
+    R_PORT1->PDR &= ~P1_MASK;                                                  \
+  }
+
+// Control signals are ACTIVE LOW (idle is HIGH)
+// Command/Data: LOW = command, HIGH = data
+// When using the TFT breakout board, control pins are configurable.
+#define RD_ACTIVE *rdPort &= rdPinUnset
+#define RD_IDLE *rdPort |= rdPinSet
+#define WR_ACTIVE *wrPort &= wrPinUnset
+#define WR_IDLE *wrPort |= wrPinSet
+#define CD_COMMAND *cdPort &= cdPinUnset
+#define CD_DATA *cdPort |= cdPinSet
+#define CS_ACTIVE *csPort &= csPinUnset
+#define CS_IDLE *csPort |= csPinSet
+
+
+#endif
+
 #else
 
 #error "Board type unsupported / not recognized"
 
 #endif
 
-#if !defined(__SAM3X8E__)
+#if defined(__AVR__)
 // Stuff common to all Arduino AVR board types:
 
 #ifdef USE_ADAFRUIT_SHIELD_PINOUT
