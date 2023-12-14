@@ -1004,6 +1004,22 @@ uint16_t Adafruit_TFTLCD::readPixel(int16_t x, int16_t y) {
     CS_IDLE;
     return (((uint16_t)r & B11111000) << 8) | (((uint16_t)g & B11111100) << 3) |
            (b >> 3);
+  } else if ((driver == ID_9341) || (driver == ID_HX8357D)) {
+    uint8_t r, g, b;
+    setAddrWindow(x, y, _width - 1, _height - 1);
+    CS_ACTIVE;
+    CD_COMMAND;
+    write8(0x2E);
+    setReadDir();
+    CD_DATA;
+    read8(r); // dummy read
+    read8(r);
+    read8(g);
+    read8(b);
+    setWriteDir();
+    CS_IDLE;
+    return (((uint16_t)r & B11111000) << 8) | (((uint16_t)g & B11111100) << 3) |
+           (b >> 3);
   } else
     return 0;
 }
